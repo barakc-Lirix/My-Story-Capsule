@@ -16,11 +16,9 @@
     <script type="text/babel" data-presets="react,env">
       const { useState, useRef, useCallback, useEffect } = React;
 
-      // Font & Style injection
       const injectStyles = () => {
         if (document.getElementById("wcb-styles")) return;
 
-        // Nunito (web fallback for Museo Sans on cards/UI)
         const link = document.createElement("link");
         link.rel = "stylesheet";
         link.href =
@@ -33,27 +31,31 @@
           *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
           body { background: #0E0E11; }
 
-          .wcb-root { font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; background: #0E0E11; min-height: 100vh; }
-
-          /* Grid */
-          .wcb-grid {
-            display: grid;
-            gap: 10px;
-            justify-content: center;
-
-            /* Auto-wrap on smaller screens */
-            grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
-
-            /* Force max width to exactly 7 columns at min size:
-               7*76 + 6*10 = 592px */
-            width: min(100%, 592px);
-            margin: 0 auto;
+          .wcb-root {
+            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif;
+            background: #0E0E11;
+            min-height: 100vh;
           }
 
-          /* Card */
+          /* Grid: 7 columns on wide screens, fewer on smaller screens so tiles stay big */
+          .wcb-grid {
+            display: grid;
+            gap: 12px;
+            justify-content: center;
+            width: 100%;
+            grid-template-columns: repeat(7, minmax(110px, 1fr));
+          }
+          @media (max-width: 1280px) { .wcb-grid { grid-template-columns: repeat(6, minmax(110px, 1fr)); } }
+          @media (max-width: 1100px) { .wcb-grid { grid-template-columns: repeat(5, minmax(110px, 1fr)); } }
+          @media (max-width: 920px)  { .wcb-grid { grid-template-columns: repeat(4, minmax(110px, 1fr)); } }
+          @media (max-width: 720px)  { .wcb-grid { grid-template-columns: repeat(3, minmax(110px, 1fr)); } }
+          @media (max-width: 520px)  { .wcb-grid { grid-template-columns: repeat(2, minmax(110px, 1fr)); } }
+
           .wcb-card {
             aspect-ratio: 1;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: #FFFFFF;
             border-radius: 14px;
             padding: 14px;
@@ -70,70 +72,97 @@
             box-shadow: 0 10px 28px rgba(0,0,0,0.28), 0 0 0 1px rgba(0,0,0,0.06);
           }
 
-          /* Inputs */
           .wcb-input {
-            background: #16161B; border: 1.5px solid #242430;
-            border-radius: 12px; color: #E4E4E8;
-            padding: 14px 18px; font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 1.05rem;
-            transition: border-color 0.2s; outline: none; width: 100%;
+            background: #16161B;
+            border: 1.5px solid #242430;
+            border-radius: 12px;
+            color: #E4E4E8;
+            padding: 14px 18px;
+            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif;
+            font-size: 1.05rem;
+            transition: border-color 0.2s;
+            outline: none;
+            width: 100%;
           }
           .wcb-input:focus { border-color: #B7FF00; }
+
           .wcb-textarea {
-            background: #16161B; border: 1.5px solid #242430;
-            border-radius: 12px; color: #E4E4E8;
-            padding: 16px; font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.92rem;
-            line-height: 1.7; transition: border-color 0.2s; resize: vertical;
-            outline: none; width: 100%;
+            background: #16161B;
+            border: 1.5px solid #242430;
+            border-radius: 12px;
+            color: #E4E4E8;
+            padding: 16px;
+            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif;
+            font-size: 0.92rem;
+            line-height: 1.7;
+            transition: border-color 0.2s;
+            resize: vertical;
+            outline: none;
+            width: 100%;
           }
           .wcb-textarea:focus { border-color: #B7FF00; }
           .wcb-textarea::placeholder { color: #3A3A45; }
           .wcb-input::placeholder { color: #3A3A45; }
 
-          /* Buttons */
           .wcb-btn-primary {
-            background: #B7FF00; color: #0C0C0F;
-            border: none; border-radius: 10px;
+            background: #B7FF00;
+            color: #0C0C0F;
+            border: none;
+            border-radius: 10px;
             padding: 13px 28px;
-            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700;
-            letter-spacing: 0.04em; cursor: pointer;
+            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            cursor: pointer;
             transition: background 0.15s, transform 0.15s, opacity 0.15s;
           }
           .wcb-btn-primary:hover:not(:disabled) { background: #c9ff33; transform: translateY(-1px); }
           .wcb-btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
 
           .wcb-btn-secondary {
-            background: transparent; color: #8A8B9A;
-            border: 1.5px solid #242430; border-radius: 10px;
+            background: transparent;
+            color: #8A8B9A;
+            border: 1.5px solid #242430;
+            border-radius: 10px;
             padding: 13px 22px;
-            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 500;
-            cursor: pointer; transition: border-color 0.15s, color 0.15s;
+            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
             white-space: nowrap;
           }
           .wcb-btn-secondary:hover { border-color: #5A5B6A; color: #D0D0D8; }
 
-          /* Step pill */
           .wcb-pill {
-            display: inline-flex; align-items: center;
-            background: rgba(183,255,0,0.08); border: 1px solid rgba(183,255,0,0.18);
-            border-radius: 100px; padding: 5px 14px; margin-bottom: 28px;
+            display: inline-flex;
+            align-items: center;
+            background: rgba(183,255,0,0.08);
+            border: 1px solid rgba(183,255,0,0.18);
+            border-radius: 100px;
+            padding: 5px 14px;
+            margin-bottom: 28px;
           }
           .wcb-pill span {
-            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 600;
-            color: #B7FF00; letter-spacing: 0.1em; text-transform: uppercase;
+            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #B7FF00;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
           }
 
-          /* Step dot */
           .wcb-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background: #242430; transition: all 0.25s ease;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #242430;
+            transition: all 0.25s ease;
           }
           .wcb-dot.active { background: #B7FF00; width: 24px; border-radius: 4px; }
           .wcb-dot.done { background: rgba(183,255,0,0.35); }
 
-          /* Divider */
-          .wcb-divider { border: none; border-top: 1px solid #1C1C24; margin: 0; }
-
-          /* Animations */
           @keyframes wcbCardPop {
             from { opacity: 0; transform: scale(0.88); }
             to   { opacity: 1; transform: scale(1); }
@@ -144,16 +173,16 @@
           }
           .wcb-fade-up { animation: wcbFadeUp 0.45s ease forwards; }
 
-          /* Count badge */
           .wcb-count {
-            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.75rem; font-weight: 500;
+            font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 500;
             transition: color 0.2s;
           }
           .wcb-count.ok    { color: #4A4B5A; }
           .wcb-count.warn  { color: #E6994A; }
           .wcb-count.limit { color: #E66060; }
 
-          /* Scrollbar */
           .wcb-textarea::-webkit-scrollbar { width: 6px; }
           .wcb-textarea::-webkit-scrollbar-track { background: transparent; }
           .wcb-textarea::-webkit-scrollbar-thumb { background: #2A2A38; border-radius: 3px; }
@@ -162,7 +191,6 @@
       };
       injectStyles();
 
-      // Helpers
       const isHebrew = (text) => {
         const first = text?.trim()?.[0];
         return first ? /[\u0590-\u05FF]/.test(first) : false;
@@ -190,7 +218,6 @@
           .slice(0, 60);
       };
 
-      // HeaderBar
       const HeaderBar = ({ step, onBack }) => (
         <header
           style={{
@@ -219,10 +246,10 @@
               }}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <rect x="1" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
-                <rect x="8" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
-                <rect x="1" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
-                <rect x="8" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
+                <rect x="1" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F" />
+                <rect x="8" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F" />
+                <rect x="1" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F" />
+                <rect x="8" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F" />
               </svg>
             </div>
             <span
@@ -271,10 +298,8 @@
         </header>
       );
 
-      // ActivityNameStep
       const ActivityNameStep = ({ onNext, initialValue }) => {
         const [value, setValue] = useState(initialValue || "");
-
         const submit = () => {
           if (value.trim()) onNext(value.trim());
         };
@@ -346,14 +371,11 @@
         );
       };
 
-      // WordsInputStep
       const WordsInputStep = ({ activityName, onNext, onBack, initialWords }) => {
         const [rawText, setRawText] = useState(initialWords?.join("\n") || "");
-
         const processed = processWords(rawText);
         const rtl = processed.length > 0 && isHebrew(processed[0]);
         const count = processed.length;
-
         const countClass = count >= 58 ? "limit" : count >= 48 ? "warn" : "ok";
 
         const submit = () => {
@@ -463,7 +485,6 @@
         );
       };
 
-      // Card
       const Card = ({ word, index, rtl, forcedSize, onSizeReady }) => {
         const cardRef = useRef(null);
         const textRef = useRef(null);
@@ -548,9 +569,7 @@
         );
       };
 
-      // CardsBoard
       const CardsBoard = ({ activityName, words, onEdit, onShuffle }) => {
-        const boardRef = useRef(null);
         const [sizeMap, setSizeMap] = useState({});
         const [globalSize, setGlobalSize] = useState(null);
         const rtl = words.length > 0 && isHebrew(words[0]);
@@ -630,17 +649,24 @@
               </div>
 
               <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
-                <button className="wcb-btn-secondary" onClick={onEdit} style={{ fontSize: "0.83rem", padding: "10px 18px" }}>
+                <button
+                  className="wcb-btn-secondary"
+                  onClick={onEdit}
+                  style={{ fontSize: "0.83rem", padding: "10px 18px" }}
+                >
                   Edit Words
                 </button>
-                <button className="wcb-btn-secondary" onClick={onShuffle} style={{ fontSize: "0.83rem", padding: "10px 18px" }}>
+                <button
+                  className="wcb-btn-secondary"
+                  onClick={onShuffle}
+                  style={{ fontSize: "0.83rem", padding: "10px 18px" }}
+                >
                   Shuffle
                 </button>
               </div>
             </div>
 
             <div
-              ref={boardRef}
               style={{
                 maxWidth: 1200,
                 margin: "0 auto",
@@ -718,7 +744,6 @@
         );
       };
 
-      // App
       function App() {
         const [step, setStep] = useState(1);
         const [activityName, setActivityName] = useState("");
@@ -751,12 +776,18 @@
               />
             )}
 
-            {step === 3 && <CardsBoard activityName={activityName} words={words} onEdit={handleEdit} onShuffle={handleShuffle} />}
+            {step === 3 && (
+              <CardsBoard
+                activityName={activityName}
+                words={words}
+                onEdit={handleEdit}
+                onShuffle={handleShuffle}
+              />
+            )}
           </div>
         );
       }
 
-      // Mount
       const el = document.getElementById("root");
       const root = ReactDOM.createRoot(el);
       root.render(React.createElement(App));
