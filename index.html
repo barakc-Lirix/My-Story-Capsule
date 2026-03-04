@@ -41,11 +41,12 @@
             gap: 10px;
             justify-content: center;
 
-            /* Max 6 columns on wide screens, auto-wrap on smaller screens */
+            /* Auto-wrap on smaller screens */
             grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
 
-            /* Cap grid width so it never becomes 7+ columns */
-            width: min(100%, 866px);
+            /* Force max width to exactly 7 columns at min size:
+               7*76 + 6*10 = 592px */
+            width: min(100%, 592px);
             margin: 0 auto;
           }
 
