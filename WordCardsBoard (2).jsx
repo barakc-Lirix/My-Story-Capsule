@@ -1,0 +1,640 @@
+import { useState, useRef, useCallback, useEffect } from "react";
+
+// ── Font & Style injection ─────────────────────────────────────────────────────
+const injectStyles = () => {
+  if (document.getElementById("wcb-styles")) return;
+  // Syne (headings) + Nunito (web fallback for Museo Sans on cards/UI)
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap";
+  document.head.appendChild(link);
+
+  const style = document.createElement("style");
+  style.id = "wcb-styles";
+  style.textContent = `
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0E0E11; }
+
+    .wcb-root { font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; background: #0E0E11; min-height: 100vh; }
+
+    /* Grid */
+    .wcb-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(76px, 136px));
+      gap: 10px;
+      justify-content: center;
+    }
+    @media (max-width: 1100px) { .wcb-grid { grid-template-columns: repeat(4, minmax(75px, 128px)); } }
+    @media (max-width: 800px)  { .wcb-grid { grid-template-columns: repeat(3, minmax(70px, 119px)); } }
+    @media (max-width: 520px)  { .wcb-grid { grid-template-columns: repeat(2, minmax(65px, 111px)); } }
+
+    /* Card */
+    .wcb-card {
+      aspect-ratio: 1;
+      display: flex; align-items: center; justify-content: center;
+      background: #FFFFFF;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+      cursor: default;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.04);
+      animation: wcbCardPop 0.35s ease forwards;
+      opacity: 0;
+    }
+    .wcb-card:nth-child(even) { background: #FAFAFA; }
+    .wcb-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.28), 0 0 0 1px rgba(0,0,0,0.06);
+    }
+
+    /* Inputs */
+    .wcb-input {
+      background: #16161B; border: 1.5px solid #242430;
+      border-radius: 12px; color: #E4E4E8;
+      padding: 14px 18px; font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 1.05rem;
+      transition: border-color 0.2s; outline: none; width: 100%;
+    }
+    .wcb-input:focus { border-color: #B7FF00; }
+    .wcb-textarea {
+      background: #16161B; border: 1.5px solid #242430;
+      border-radius: 12px; color: #E4E4E8;
+      padding: 16px; font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.92rem;
+      line-height: 1.7; transition: border-color 0.2s; resize: vertical;
+      outline: none; width: 100%;
+    }
+    .wcb-textarea:focus { border-color: #B7FF00; }
+    .wcb-textarea::placeholder { color: #3A3A45; }
+    .wcb-input::placeholder { color: #3A3A45; }
+
+    /* Buttons */
+    .wcb-btn-primary {
+      background: #B7FF00; color: #0C0C0F;
+      border: none; border-radius: 10px;
+      padding: 13px 28px;
+      font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 700;
+      letter-spacing: 0.04em; cursor: pointer;
+      transition: background 0.15s, transform 0.15s, opacity 0.15s;
+    }
+    .wcb-btn-primary:hover:not(:disabled) { background: #c9ff33; transform: translateY(-1px); }
+    .wcb-btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .wcb-btn-secondary {
+      background: transparent; color: #8A8B9A;
+      border: 1.5px solid #242430; border-radius: 10px;
+      padding: 13px 22px;
+      font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.88rem; font-weight: 500;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .wcb-btn-secondary:hover { border-color: #5A5B6A; color: #D0D0D8; }
+
+    /* Step pill */
+    .wcb-pill {
+      display: inline-flex; align-items: center;
+      background: rgba(183,255,0,0.08); border: 1px solid rgba(183,255,0,0.18);
+      border-radius: 100px; padding: 5px 14px; margin-bottom: 28px;
+    }
+    .wcb-pill span {
+      font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.72rem; font-weight: 600;
+      color: #B7FF00; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+
+    /* Step dot */
+    .wcb-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #242430; transition: all 0.25s ease;
+    }
+    .wcb-dot.active { background: #B7FF00; width: 24px; border-radius: 4px; }
+    .wcb-dot.done { background: rgba(183,255,0,0.35); }
+
+    /* Divider */
+    .wcb-divider { border: none; border-top: 1px solid #1C1C24; margin: 0; }
+
+    /* Animations */
+    @keyframes wcbCardPop {
+      from { opacity: 0; transform: scale(0.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes wcbFadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .wcb-fade-up { animation: wcbFadeUp 0.45s ease forwards; }
+
+    /* Count badge */
+    .wcb-count {
+      font-family: 'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif; font-size: 0.75rem; font-weight: 500;
+      transition: color 0.2s;
+    }
+    .wcb-count.ok    { color: #4A4B5A; }
+    .wcb-count.warn  { color: #E6994A; }
+    .wcb-count.limit { color: #E66060; }
+
+    /* Scrollbar */
+    .wcb-textarea::-webkit-scrollbar { width: 6px; }
+    .wcb-textarea::-webkit-scrollbar-track { background: transparent; }
+    .wcb-textarea::-webkit-scrollbar-thumb { background: #2A2A38; border-radius: 3px; }
+  `;
+  document.head.appendChild(style);
+};
+injectStyles();
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+const isHebrew = (text) => {
+  const first = text?.trim()?.[0];
+  return first ? /[\u0590-\u05FF]/.test(first) : false;
+};
+
+const processWords = (raw) => {
+  const seen = new Set();
+  return raw
+    .split("\n")
+    .map(line =>
+      line
+        .replace(/\t/g, " ")
+        .replace(/^[\s\u2022\u2023\u25E6\u2043\u2219\-\*•·▪▸►▶→]+/, "")
+        .replace(/\s+/g, " ")
+        .trim()
+    )
+    .filter(line => {
+      if (!line) return false;
+      if (line.split(/\s+/).length > 2) return false;
+      const key = line.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 60);
+};
+
+// No longer needed — font size is computed dynamically per card
+
+// ── HeaderBar ──────────────────────────────────────────────────────────────────
+const HeaderBar = ({ step, onBack }) => (
+  <header style={{
+    background: "#0E0E11",
+    borderBottom: "1px solid #1C1C24",
+    padding: "0 32px",
+    height: 60,
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    position: "sticky", top: 0, zIndex: 200,
+  }}>
+    {/* Logo */}
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{
+        width: 30, height: 30,
+        background: "#B7FF00", borderRadius: 8,
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="1" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
+          <rect x="8" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
+          <rect x="1" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
+          <rect x="8" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
+        </svg>
+      </div>
+      <span style={{
+        fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif", fontWeight: 700, fontSize: "0.92rem",
+        color: "#E0E0E8", letterSpacing: "0.02em",
+      }}>
+        WordBoard
+      </span>
+    </div>
+
+    {/* Step dots */}
+    <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+      {[1, 2, 3].map(s => (
+        <div key={s} className={`wcb-dot ${step === s ? "active" : step > s ? "done" : ""}`} />
+      ))}
+    </div>
+
+    {/* Back button */}
+    <div style={{ minWidth: 100, display: "flex", justifyContent: "flex-end" }}>
+      {step > 1 ? (
+        <button className="wcb-btn-secondary" onClick={onBack}
+          style={{ padding: "8px 16px", fontSize: "0.82rem" }}>
+          ← Back
+        </button>
+      ) : (
+        <span style={{ fontSize: "0.78rem", color: "#3A3A48",
+          fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif" }}>
+          Step {step} / 3
+        </span>
+      )}
+    </div>
+  </header>
+);
+
+// ── ActivityNameStep ───────────────────────────────────────────────────────────
+const ActivityNameStep = ({ onNext, initialValue }) => {
+  const [value, setValue] = useState(initialValue || "");
+
+  const submit = () => { if (value.trim()) onNext(value.trim()); };
+
+  return (
+    <div className="wcb-fade-up" style={{
+      minHeight: "calc(100vh - 60px)", display: "flex",
+      alignItems: "center", justifyContent: "center",
+      padding: "48px 24px",
+    }}>
+      <div style={{ maxWidth: 500, width: "100%", textAlign: "center" }}>
+        <div className="wcb-pill"><span>Step 1 of 3</span></div>
+
+        <h1 style={{
+          fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif",
+          fontSize: "clamp(1.9rem, 4.5vw, 3rem)",
+          fontWeight: 800, color: "#F0F0F4",
+          lineHeight: 1.18, letterSpacing: "-0.025em",
+          marginBottom: 10,
+        }}>
+          What is the name
+        </h1>
+        <h1 style={{
+          fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif",
+          fontSize: "clamp(1.9rem, 4.5vw, 3rem)",
+          fontWeight: 800, color: "#B7FF00",
+          lineHeight: 1.18, letterSpacing: "-0.025em",
+          marginBottom: 16,
+        }}>
+          of the activity?
+        </h1>
+
+        <input
+          className="wcb-input"
+          type="text"
+          placeholder="e.g. Team Values · Ice Breaker · Brainstorm"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && submit()}
+          autoFocus
+          style={{ textAlign: "center", marginBottom: 16, fontSize: "1rem" }}
+        />
+
+        <button
+          className="wcb-btn-primary"
+          onClick={submit}
+          disabled={!value.trim()}
+          style={{ width: "100%", padding: "14px" }}
+        >
+          Continue →
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ── WordsInputStep ─────────────────────────────────────────────────────────────
+const WordsInputStep = ({ activityName, onNext, onBack, initialWords }) => {
+  const [rawText, setRawText] = useState(initialWords?.join("\n") || "");
+
+  const processed = processWords(rawText);
+  const rtl = processed.length > 0 && isHebrew(processed[0]);
+  const count = processed.length;
+
+  const countClass = count >= 58 ? "limit" : count >= 48 ? "warn" : "ok";
+
+  const submit = () => { if (count > 0) onNext(processed); };
+
+  return (
+    <div className="wcb-fade-up" style={{
+      minHeight: "calc(100vh - 60px)", display: "flex",
+      alignItems: "center", justifyContent: "center",
+      padding: "48px 24px",
+    }}>
+      <div style={{ maxWidth: 580, width: "100%" }}>
+        {/* Header */}
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div className="wcb-pill"><span>Step 2 of 3</span></div>
+          <h2 style={{
+            fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif",
+            fontSize: "clamp(1.4rem, 3vw, 2rem)",
+            fontWeight: 700, color: "#F0F0F4",
+            letterSpacing: "-0.015em", marginBottom: 6,
+            direction: rtl ? "rtl" : "ltr",
+          }}>
+            {activityName}
+          </h2>
+          <p style={{
+            fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif", fontSize: "0.92rem",
+            color: "#52525F", lineHeight: 1.5,
+          }}>
+            Paste your list of words — one per line, max two words each
+          </p>
+        </div>
+
+        {/* Textarea */}
+        <div style={{ position: "relative", marginBottom: 12 }}>
+          <textarea
+            className="wcb-textarea"
+            placeholder={"trust\nleadership\nteam spirit\ncommunication\n..."}
+            value={rawText}
+            onChange={e => setRawText(e.target.value)}
+            rows={11}
+            dir={rtl ? "rtl" : "ltr"}
+          />
+          <span
+            className={`wcb-count ${countClass}`}
+            style={{ position: "absolute", bottom: 12, right: 14 }}
+          >
+            {count} / 60
+          </span>
+        </div>
+
+        {/* Language / count hint */}
+        {count > 0 && (
+          <div style={{
+            background: "#16161B", border: "1px solid #242430",
+            borderRadius: 9, padding: "10px 14px",
+            display: "flex", alignItems: "center", gap: 10,
+            marginBottom: 18,
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: 3, background: "#B7FF00", flexShrink: 0 }} />
+            <span style={{
+              fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif", fontSize: "0.82rem", color: "#7A7B8A",
+            }}>
+              {count} card{count !== 1 ? "s" : ""} ready
+              {" · "}{rtl ? "Hebrew — RTL layout" : "English — LTR layout"}
+            </span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <button className="wcb-btn-secondary" onClick={onBack}>Back</button>
+          <button
+            className="wcb-btn-primary"
+            onClick={submit}
+            disabled={count === 0}
+            style={{ flex: 1 }}
+          >
+            Generate Board →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Card ───────────────────────────────────────────────────────────────────────
+const Card = ({ word, index, rtl, forcedSize, onSizeReady }) => {
+  const cardRef  = useRef(null);
+  const textRef  = useRef(null);
+  const reported = useRef(false);
+  const [fontSize, setFontSize] = useState(forcedSize || 12);
+
+  // Phase 1: fit and report natural size
+  useEffect(() => {
+    if (forcedSize != null) return; // phase 2 — skip measuring
+    reported.current = false;
+
+    const fit = () => {
+      const card = cardRef.current;
+      const text = textRef.current;
+      if (!card || !text) return;
+
+      const FILL = 0.82;
+      const pad  = 12;
+      const maxW = card.clientWidth  - pad * 2;
+      const maxH = card.clientHeight - pad * 2;
+      if (maxW <= 0 || maxH <= 0) return;
+
+      let lo = 6, hi = 220;
+      while (hi - lo > 0.5) {
+        const mid = (lo + hi) / 2;
+        text.style.fontSize = mid + "px";
+        if (text.scrollWidth <= maxW && text.scrollHeight <= maxH) lo = mid;
+        else hi = mid;
+      }
+
+      text.style.fontSize = lo + "px";
+      const ratio = Math.min(
+        (maxW * FILL) / (text.scrollWidth  || 1),
+        (maxH * FILL) / (text.scrollHeight || 1)
+      );
+      const size = Math.max(6, Math.min(lo * ratio, lo));
+      setFontSize(size);
+
+      if (!reported.current) {
+        reported.current = true;
+        onSizeReady?.(index, size);
+      }
+    };
+
+    // Wait one frame so card has real dimensions
+    const id = requestAnimationFrame(() => {
+      fit();
+      const ro = new ResizeObserver(fit);
+      if (cardRef.current) ro.observe(cardRef.current);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [word, forcedSize]);
+
+  // Phase 2: apply the global uniform size
+  useEffect(() => {
+    if (forcedSize != null) setFontSize(forcedSize);
+  }, [forcedSize]);
+
+  return (
+    <div
+      ref={cardRef}
+      className="wcb-card"
+      style={{ animationDelay: `${Math.min(index * 0.028, 0.7)}s` }}
+    >
+      <span
+        ref={textRef}
+        style={{
+          fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif",
+          fontSize: forcedSize ?? fontSize,
+          fontWeight: 700,
+          color: "#4C4D4C",
+          lineHeight: 1.2,
+          whiteSpace: "normal",
+          wordBreak: "keep-all",
+          overflowWrap: "normal",
+          direction: rtl ? "rtl" : "ltr",
+          maxWidth: "100%",
+          textAlign: "center",
+          display: "block",
+        }}
+      >
+        {word}
+      </span>
+    </div>
+  );
+};
+
+// ── CardsBoard ─────────────────────────────────────────────────────────────────
+const CardsBoard = ({ activityName, words, onEdit, onShuffle }) => {
+  const boardRef    = useRef(null);
+  const [sizeMap,    setSizeMap]      = useState({});
+  const [globalSize, setGlobalSize]   = useState(null);
+  const rtl = words.length > 0 && isHebrew(words[0]);
+
+  // Reset uniform size when word list changes
+  useEffect(() => { setSizeMap({}); setGlobalSize(null); }, [words]);
+
+  const handleSizeReady = useCallback((index, size) => {
+    setSizeMap(prev => {
+      const next = { ...prev, [index]: size };
+      if (Object.keys(next).length === words.length) {
+        setGlobalSize(Math.min(...Object.values(next)));
+      }
+      return next;
+    });
+  }, [words.length]);
+
+
+  return (
+    <div className="wcb-fade-up" style={{ minHeight: "calc(100vh - 60px)", padding: "40px 28px 60px" }}>
+      {/* Top bar */}
+      <div style={{
+        maxWidth: 1200, margin: "0 auto 36px",
+        display: "flex", alignItems: "flex-end",
+        justifyContent: "space-between", flexWrap: "wrap", gap: 20,
+      }}>
+        <div>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "rgba(183,255,0,0.07)", border: "1px solid rgba(183,255,0,0.15)",
+            borderRadius: 100, padding: "5px 12px", marginBottom: 14,
+          }}>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#B7FF00" }} />
+            <span style={{
+              fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif", fontSize: "0.72rem", fontWeight: 600,
+              color: "#B7FF00", letterSpacing: "0.1em", textTransform: "uppercase",
+            }}>
+              {words.length} cards · {rtl ? "Hebrew" : "English"}
+            </span>
+          </div>
+          <h1 style={{
+            fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif",
+            fontSize: "clamp(2.2rem, 5.5vw, 3.8rem)",
+            fontWeight: 800, color: "#F0F0F4",
+            letterSpacing: "-0.03em", lineHeight: 1.05,
+            direction: rtl ? "rtl" : "ltr",
+          }}>
+            {activityName}
+          </h1>
+        </div>
+
+        <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
+          <button className="wcb-btn-secondary" onClick={onEdit}
+            style={{ fontSize: "0.83rem", padding: "10px 18px" }}>
+            ✏ Edit Words
+          </button>
+          <button className="wcb-btn-secondary" onClick={onShuffle}
+            style={{ fontSize: "0.83rem", padding: "10px 18px" }}>
+            ⟳ Shuffle
+          </button>
+        </div>
+      </div>
+
+      {/* Board (capture target) */}
+      <div
+        ref={boardRef}
+        style={{
+          maxWidth: 1200, margin: "0 auto",
+          background: "#0E0E11",
+          borderRadius: 18, padding: "32px 32px 36px",
+          border: "1px solid #1C1C24",
+        }}
+      >
+        {/* Board header line */}
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 28, paddingBottom: 20,
+          borderBottom: "1px solid #1C1C24",
+          direction: rtl ? "rtl" : "ltr",
+        }}>
+          <span style={{
+            fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif", fontWeight: 600,
+            fontSize: "0.95rem", color: "#3A3A48",
+          }}>
+            {activityName}
+          </span>
+          <span style={{
+            fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif", fontSize: "0.75rem",
+            color: "#2A2A36", fontWeight: 500,
+          }}>
+            {words.length} cards
+          </span>
+        </div>
+
+        {/* Cards */}
+        <div className="wcb-grid">
+          {words.map((word, i) => (
+            <Card
+              key={`${word}-${i}`}
+              word={word}
+              index={i}
+              rtl={rtl}
+              forcedSize={globalSize}
+              onSizeReady={globalSize == null ? handleSizeReady : undefined}
+            />
+          ))}
+        </div>
+
+        {/* Copyright */}
+        <div style={{
+          marginTop: 32, paddingTop: 20,
+          borderTop: "1px solid #1C1C24",
+          textAlign: "center",
+        }}>
+          <p style={{
+            fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif",
+            fontSize: "0.68rem", color: "#E8E8EC",
+            lineHeight: 1.7, fontWeight: 400,
+            maxWidth: 640, margin: "0 auto",
+          }}>
+            Copyright © 2025 Lirix Ltd. All rights reserved.<br />
+            The content, or any part thereof, may not be copied, published, modified or distributed
+            without the prior written permission of Lirix Ltd.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── App ────────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [step, setStep]               = useState(1);
+  const [activityName, setActivityName] = useState("");
+  const [words, setWords]             = useState([]);
+
+  const handleNameNext  = (name)   => { setActivityName(name); setStep(2); };
+  const handleWordsNext = (ws)     => { setWords(ws); setStep(3); };
+  const handleEdit      = ()       => setStep(2);
+  const handleShuffle   = ()       => setWords(w => [...w].sort(() => Math.random() - 0.5));
+  const handleBack      = ()       => setStep(s => Math.max(1, s - 1));
+
+  return (
+    <div className="wcb-root">
+      <HeaderBar step={step} onBack={handleBack} />
+
+      {step === 1 && (
+        <ActivityNameStep
+          onNext={handleNameNext}
+          initialValue={activityName}
+        />
+      )}
+      {step === 2 && (
+        <WordsInputStep
+          activityName={activityName}
+          onNext={handleWordsNext}
+          onBack={handleBack}
+          initialWords={words.length > 0 ? words : null}
+        />
+      )}
+      {step === 3 && (
+        <CardsBoard
+          activityName={activityName}
+          words={words}
+          onEdit={handleEdit}
+          onShuffle={handleShuffle}
+        />
+      )}
+    </div>
+  );
+}
