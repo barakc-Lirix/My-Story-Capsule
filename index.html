@@ -16,7 +16,7 @@
     <script type="text/babel" data-presets="react,env">
       const { useState, useRef, useCallback, useEffect } = React;
 
-      // ── Font & Style injection ───────────────────────────────────────────────
+      // Font & Style injection
       const injectStyles = () => {
         if (document.getElementById("wcb-styles")) return;
 
@@ -38,13 +38,16 @@
           /* Grid */
           .wcb-grid {
             display: grid;
-            grid-template-columns: repeat(5, minmax(76px, 136px));
             gap: 10px;
             justify-content: center;
+
+            /* Max 6 columns on wide screens, auto-wrap on smaller screens */
+            grid-template-columns: repeat(auto-fit, minmax(76px, 1fr));
+
+            /* Cap grid width so it never becomes 7+ columns */
+            width: min(100%, 866px);
+            margin: 0 auto;
           }
-          @media (max-width: 1100px) { .wcb-grid { grid-template-columns: repeat(4, minmax(75px, 128px)); } }
-          @media (max-width: 800px)  { .wcb-grid { grid-template-columns: repeat(3, minmax(70px, 119px)); } }
-          @media (max-width: 520px)  { .wcb-grid { grid-template-columns: repeat(2, minmax(65px, 111px)); } }
 
           /* Card */
           .wcb-card {
@@ -158,7 +161,7 @@
       };
       injectStyles();
 
-      // ── Helpers ───────────────────────────────────────────────────────────────
+      // Helpers
       const isHebrew = (text) => {
         const first = text?.trim()?.[0];
         return first ? /[\u0590-\u05FF]/.test(first) : false;
@@ -186,7 +189,7 @@
           .slice(0, 60);
       };
 
-      // ── HeaderBar ─────────────────────────────────────────────────────────────
+      // HeaderBar
       const HeaderBar = ({ step, onBack }) => (
         <header
           style={{
@@ -215,10 +218,10 @@
               }}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <rect x="1" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F" />
-                <rect x="8" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F" />
-                <rect x="1" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F" />
-                <rect x="8" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F" />
+                <rect x="1" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
+                <rect x="8" y="1" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
+                <rect x="1" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
+                <rect x="8" y="8" width="5" height="5" rx="1.2" fill="#0C0C0F"/>
               </svg>
             </div>
             <span
@@ -238,9 +241,7 @@
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
-                className={`wcb-dot ${
-                  step === s ? "active" : step > s ? "done" : ""
-                }`}
+                className={`wcb-dot ${step === s ? "active" : step > s ? "done" : ""}`}
               />
             ))}
           </div>
@@ -252,7 +253,7 @@
                 onClick={onBack}
                 style={{ padding: "8px 16px", fontSize: "0.82rem" }}
               >
-                ← Back
+                Back
               </button>
             ) : (
               <span
@@ -269,7 +270,7 @@
         </header>
       );
 
-      // ── ActivityNameStep ──────────────────────────────────────────────────────
+      // ActivityNameStep
       const ActivityNameStep = ({ onNext, initialValue }) => {
         const [value, setValue] = useState(initialValue || "");
 
@@ -323,7 +324,7 @@
               <input
                 className="wcb-input"
                 type="text"
-                placeholder="e.g. Team Values · Ice Breaker · Brainstorm"
+                placeholder="e.g. Team Values, Ice Breaker, Brainstorm"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && submit()}
@@ -337,14 +338,14 @@
                 disabled={!value.trim()}
                 style={{ width: "100%", padding: "14px" }}
               >
-                Continue →
+                Continue
               </button>
             </div>
           </div>
         );
       };
 
-      // ── WordsInputStep ────────────────────────────────────────────────────────
+      // WordsInputStep
       const WordsInputStep = ({ activityName, onNext, onBack, initialWords }) => {
         const [rawText, setRawText] = useState(initialWords?.join("\n") || "");
 
@@ -395,7 +396,7 @@
                     lineHeight: 1.5,
                   }}
                 >
-                  Paste your list of words — one per line, max two words each
+                  Paste your list of words, one per line, max two words each
                 </p>
               </div>
 
@@ -429,15 +430,7 @@
                     marginBottom: 18,
                   }}
                 >
-                  <div
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: 3,
-                      background: "#B7FF00",
-                      flexShrink: 0,
-                    }}
-                  />
+                  <div style={{ width: 6, height: 6, borderRadius: 3, background: "#B7FF00", flexShrink: 0 }} />
                   <span
                     style={{
                       fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif",
@@ -446,7 +439,7 @@
                     }}
                   >
                     {count} card{count !== 1 ? "s" : ""} ready {" · "}
-                    {rtl ? "Hebrew — RTL layout" : "English — LTR layout"}
+                    {rtl ? "Hebrew - RTL layout" : "English - LTR layout"}
                   </span>
                 </div>
               )}
@@ -461,7 +454,7 @@
                   disabled={count === 0}
                   style={{ flex: 1 }}
                 >
-                  Generate Board →
+                  Generate Board
                 </button>
               </div>
             </div>
@@ -469,7 +462,7 @@
         );
       };
 
-      // ── Card ─────────────────────────────────────────────────────────────────
+      // Card
       const Card = ({ word, index, rtl, forcedSize, onSizeReady }) => {
         const cardRef = useRef(null);
         const textRef = useRef(null);
@@ -491,8 +484,7 @@
             const maxH = card.clientHeight - pad * 2;
             if (maxW <= 0 || maxH <= 0) return;
 
-            let lo = 6,
-              hi = 220;
+            let lo = 6, hi = 220;
             while (hi - lo > 0.5) {
               const mid = (lo + hi) / 2;
               text.style.fontSize = mid + "px";
@@ -555,7 +547,7 @@
         );
       };
 
-      // ── CardsBoard ────────────────────────────────────────────────────────────
+      // CardsBoard
       const CardsBoard = ({ activityName, words, onEdit, onShuffle }) => {
         const boardRef = useRef(null);
         const [sizeMap, setSizeMap] = useState({});
@@ -620,6 +612,7 @@
                     {words.length} cards · {rtl ? "Hebrew" : "English"}
                   </span>
                 </div>
+
                 <h1
                   style={{
                     fontFamily: "'Museo Sans', 'MuseoSans-500', 'Nunito', sans-serif",
@@ -637,10 +630,10 @@
 
               <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}>
                 <button className="wcb-btn-secondary" onClick={onEdit} style={{ fontSize: "0.83rem", padding: "10px 18px" }}>
-                  ✏ Edit Words
+                  Edit Words
                 </button>
                 <button className="wcb-btn-secondary" onClick={onShuffle} style={{ fontSize: "0.83rem", padding: "10px 18px" }}>
-                  ⟳ Shuffle
+                  Shuffle
                 </button>
               </div>
             </div>
@@ -724,7 +717,7 @@
         );
       };
 
-      // ── App ──────────────────────────────────────────────────────────────────
+      // App
       function App() {
         const [step, setStep] = useState(1);
         const [activityName, setActivityName] = useState("");
@@ -757,14 +750,12 @@
               />
             )}
 
-            {step === 3 && (
-              <CardsBoard activityName={activityName} words={words} onEdit={handleEdit} onShuffle={handleShuffle} />
-            )}
+            {step === 3 && <CardsBoard activityName={activityName} words={words} onEdit={handleEdit} onShuffle={handleShuffle} />}
           </div>
         );
       }
 
-      // ── Mount ────────────────────────────────────────────────────────────────
+      // Mount
       const el = document.getElementById("root");
       const root = ReactDOM.createRoot(el);
       root.render(React.createElement(App));
