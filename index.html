@@ -37,19 +37,19 @@
             min-height: 100vh;
           }
 
-          /* Grid: 7 columns on wide screens, fewer on smaller screens so tiles stay big */
+          /* Grid: 7 columns on wide screens, but keep tiles big */
           .wcb-grid {
             display: grid;
-            gap: 12px;
+            gap: 14px;
             justify-content: center;
             width: 100%;
-            grid-template-columns: repeat(7, minmax(110px, 1fr));
+            grid-template-columns: repeat(7, minmax(140px, 1fr));
           }
-          @media (max-width: 1280px) { .wcb-grid { grid-template-columns: repeat(6, minmax(110px, 1fr)); } }
-          @media (max-width: 1100px) { .wcb-grid { grid-template-columns: repeat(5, minmax(110px, 1fr)); } }
-          @media (max-width: 920px)  { .wcb-grid { grid-template-columns: repeat(4, minmax(110px, 1fr)); } }
-          @media (max-width: 720px)  { .wcb-grid { grid-template-columns: repeat(3, minmax(110px, 1fr)); } }
-          @media (max-width: 520px)  { .wcb-grid { grid-template-columns: repeat(2, minmax(110px, 1fr)); } }
+          @media (max-width: 1400px) { .wcb-grid { grid-template-columns: repeat(6, minmax(140px, 1fr)); } }
+          @media (max-width: 1200px) { .wcb-grid { grid-template-columns: repeat(5, minmax(140px, 1fr)); } }
+          @media (max-width: 980px)  { .wcb-grid { grid-template-columns: repeat(4, minmax(140px, 1fr)); } }
+          @media (max-width: 760px)  { .wcb-grid { grid-template-columns: repeat(3, minmax(140px, 1fr)); } }
+          @media (max-width: 560px)  { .wcb-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); } }
 
           .wcb-card {
             aspect-ratio: 1;
@@ -592,11 +592,13 @@
           [words.length]
         );
 
+        const containerWidth = "min(1700px, calc(100vw - 56px))";
+
         return (
           <div className="wcb-fade-up" style={{ minHeight: "calc(100vh - 60px)", padding: "40px 28px 60px" }}>
             <div
               style={{
-                maxWidth: 1200,
+                width: containerWidth,
                 margin: "0 auto 36px",
                 display: "flex",
                 alignItems: "flex-end",
@@ -668,11 +670,11 @@
 
             <div
               style={{
-                maxWidth: 1200,
+                width: containerWidth,
                 margin: "0 auto",
                 background: "#0E0E11",
                 borderRadius: 18,
-                padding: "32px 32px 36px",
+                padding: "34px 34px 40px",
                 border: "1px solid #1C1C24",
               }}
             >
@@ -730,7 +732,7 @@
                     color: "#E8E8EC",
                     lineHeight: 1.7,
                     fontWeight: 400,
-                    maxWidth: 640,
+                    maxWidth: 720,
                     margin: "0 auto",
                   }}
                 >
